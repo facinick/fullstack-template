@@ -1,0 +1,154 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider      = "prisma-client-js"
+  output        = "../src"
+  binaryTargets = ["native", "darwin", "debian-openssl-1.1.x"]
+}
+
+generator dbml {
+  provider = "prisma-dbml-generator"
+}
+
+enum Role {
+  USER
+  ADMIN
+  ANON
+}
+
+enum Mood {
+  EARTH
+  FIRE
+  WATER
+  SPACE
+  GRASS
+  METAL
+  VOID
+  SKY
+}
+
+enum Taste {
+  SWEET
+  SOUR
+  ALKALINE
+  SALTY
+  BITTER
+  SAVORY
+  METALLIC
+  WATER
+  UMAMI
+}
+
+enum Smell {
+  FRAGRANT
+  FRUITY
+  CITRUS
+  WOODY
+  CHEMICAL
+  SWEET
+  MINTY
+  NUTTY
+  PUNGENT
+  DECAYED
+}
+
+enum Color {
+  RED
+  ORANGE
+  YELLOW
+  GREEN
+  BLUE
+  PURPLE
+  PINK
+  BROWN
+  GRAY
+  BLACK
+  WHITE
+}
+
+model User {
+  id           String         @id
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  password     String
+  refreshToken String?        @unique
+  expiresIn    Int?
+  role         Role           @default(USER)
+  posts        Post[]
+  followers    Friends[]      @relation("followers")
+  following    Friends[]      @relation("following")
+  presence     Presence?
+  texts        Message[]
+  chats        Conversation[] @relation("chats")
+  myChats      Conversation[] @relation("myChats")
+}
+
+model Message {
+  id             String       @id @default(uuid())
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  text           String
+  // belongs to one conversation
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
+  // belongs to one user
+  authorId       String
+  author         User         @relation(fields: [authorId], references: [id])
+}
+
+model Conversation {
+  id           String    @id @default(uuid())
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  name         String?
+  authorId     String
+  author       User      @relation(name: "myChats", fields: [authorId], references: [id])
+  texts        Message[]
+  participants User[]    @relation(name: "chats")
+}
+
+model Presence {
+  id       String  @id @default(uuid())
+  // active status
+  online   Boolean @default(false)
+  // mood
+  mood     Mood    @default(EARTH)
+  // location
+  spaceX   Int?
+  spaceY   Int?
+  // taste
+  taste    Taste   @default(WATER)
+  smell    Smell   @default(WOODY)
+  // image
+  imageUrl String?
+  color    Color   @default(BLACK)
+  // text
+  bio      String?
+  // music and themes later
+  userId   String  @unique
+  user     User    @relation(fields: [userId], references: [id])
+}
+
+model Post {
+  id          String   @id @default(uuid())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  title       String
+  description String
+  authorId    String
+  author      User     @relation(fields: [authorId], references: [id])
+}
+
+model Friends {
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  senderId   String
+  receiverId String
+  sender     User     @relation(name: "following", fields: [senderId], references: [id])
+  receiver   User     @relation(name: "followers", fields: [receiverId], references: [id])
+
+  @@id([senderId, receiverId])
+}

@@ -1,0 +1,27 @@
+
+fragment postData on Post {
+  id
+  description
+  title
+}
+
+query AllPostsQuery {
+  posts {
+    ...postData
+    author {
+      id
+    }
+  }
+}
+
+mutation CreateOnePost ($tit: String!, $des: String!) {
+  createOnePost( title: $tit, description: $des) {
+    ...postData
+  }
+}
+
+mutation UpdateOnePost($tit: String!, $des: String!, $postId: String!) {
+  updateOnePost( title: $tit, description: $des, id: $postId) {
+    ...postData
+  }
+}

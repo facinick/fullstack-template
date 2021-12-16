@@ -1,0 +1,1 @@
+export { PostQueries, PostMutations, Post } from './types';

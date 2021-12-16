@@ -1,0 +1,6 @@
+1. way to auth mutations
+2. handle permissions
+3. use permissions and authentication in existing mutations
+4. prisma update one post and return that post
+5. decide 1. global storage, api data storage+caching
+6. fix clear interval function

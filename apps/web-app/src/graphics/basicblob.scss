@@ -1,0 +1,23 @@
+#blobs{
+    width: 33%;
+
+    path {
+        mix-blend-mode: screen;
+      }
+      
+      path:nth-child(1) {
+        fill: rgb(100% 0% 0%);
+        fill: lch(54.291% 132 40.858);
+      }
+      
+      path:nth-child(2) {
+        fill: rgb(0% 100% 0%);
+        fill: lch(87.819% 132 134.384);
+      }
+      
+      path:nth-child(3) {
+        fill: rgb(0% 0% 100%);
+        fill: lch(29.568% 132 301.364);
+      }
+  }
+  

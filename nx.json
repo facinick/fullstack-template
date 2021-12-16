@@ -1,0 +1,47 @@
+{
+  "implicitDependencies": {
+    "package.json": {
+      "dependencies": "*",
+      "devDependencies": "*"
+    },
+    ".eslintrc.json": "*"
+  },
+  "affected": {
+    "defaultBase": "master"
+  },
+  "npmScope": "fullstack",
+  "tasksRunnerOptions": {
+    "default": {
+      "runner": "@nrwl/workspace/tasks-runners/default",
+      "options": {
+        "cacheableOperations": ["build", "lint", "test", "e2e", "generate-gql"],
+        "strictlyOrderedTargets": ["generate-gql"]
+      }
+    }
+  },
+  "projects": {
+    "web-app": {
+      "tags": []
+    },
+    "web-app-e2e": {
+      "tags": [],
+      "implicitDependencies": ["web-app"]
+    },
+    "api": {
+      "tags": []
+    },
+    "prisma-client": {
+      "tags": []
+    },
+    "data-access": {
+      "tags": [],
+      "implicitDependencies": ["api"]
+    },
+    "feature-posts": {
+      "tags": []
+    },
+    "feature-auth": {
+      "tags": []
+    }
+  }
+}

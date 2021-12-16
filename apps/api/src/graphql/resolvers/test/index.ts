@@ -1,0 +1,1 @@
+export { testQueries, testMutations } from './types';

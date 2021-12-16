@@ -1,0 +1,47 @@
+# query Utc {
+# 	utc {
+#         timestamp
+#     }
+# }
+
+# query Wait {
+# 	wait {
+#         timestamp
+#     }
+# }
+
+# query UtcSecure {
+# 	utcsecure {
+#         timestamp
+#     }
+# }
+
+# query WaitSecure {
+# 	waitsecure {
+#         timestamp
+#     }
+# }
+
+# mutation UtcMut {
+# 	utcmut {
+#         timestamp
+#     }
+# }
+
+# mutation WaitMut {
+# 	waitmut {
+#         timestamp
+#     }
+# }
+
+# mutation UtcSecureMut {
+# 	utcsecuremut {
+#         timestamp
+#     }
+# }
+
+# mutation WaitSecureMut {
+# 	waitsecuremut {
+#         timestamp
+#     }
+# }

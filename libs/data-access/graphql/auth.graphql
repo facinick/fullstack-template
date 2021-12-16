@@ -1,0 +1,74 @@
+
+fragment userInfo on User {
+  id
+  createdAt
+  updatedAt
+  presence {
+    imageUrl
+  }
+}
+
+fragment userData on User {
+  posts {
+    id
+    title
+    description
+  }
+  followers {
+    ...userInfo
+  }
+  following {
+    ...userInfo
+  }
+}
+
+mutation Login ($id: String!, $password: String!) {
+	login(id: $id, password: $password) {
+    user {
+      ...userInfo
+    }
+    tokens {
+      accessToken
+      accessTokenExpiry
+      refreshTokenExpiry
+    }
+  }
+}
+
+mutation Register ($id: String!, $password: String!) {
+	register(id: $id, password: $password) {
+    user {
+      ...userInfo
+    }
+    tokens {
+      accessToken
+      accessTokenExpiry
+      refreshTokenExpiry
+    }
+  }
+}
+
+mutation Refresh {
+	refresh {
+    user {
+      ...userInfo
+    }
+    tokens {
+      accessToken
+      accessTokenExpiry
+      refreshTokenExpiry
+    }
+  }
+}
+
+mutation Logout {
+	logout {
+    ...userInfo
+  }
+}
+
+mutation ResetPassword ($password: String!) {
+	resetPassword(password: $password) {
+    ...userInfo
+  }
+}

@@ -1,0 +1,155 @@
+//// ------------------------------------------------------
+//// THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+//// ------------------------------------------------------
+
+Table User {
+  id String [pk]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  password String [not null]
+  refreshToken String [unique]
+  expiresIn Int
+  role Role [not null, default: 'USER']
+  posts Post [not null]
+  followers Friends [not null]
+  following Friends [not null]
+  presence Presence
+  texts Message [not null]
+  chats Conversation [not null]
+  myChats Conversation [not null]
+}
+
+Table Message {
+  id String [pk]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  text String [not null]
+  conversationId String [not null]
+  conversation Conversation [not null]
+  authorId String [not null]
+  author User [not null]
+}
+
+Table Conversation {
+  id String [pk]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  name String
+  authorId String [not null]
+  author User [not null]
+  texts Message [not null]
+  participants User [not null]
+}
+
+Table Presence {
+  id String [pk]
+  online Boolean [not null, default: false]
+  mood Mood [not null, default: 'EARTH']
+  spaceX Int
+  spaceY Int
+  taste Taste [not null, default: 'WATER']
+  smell Smell [not null, default: 'WOODY']
+  imageUrl String
+  color Color [not null, default: 'BLACK']
+  bio String
+  userId String [unique, not null]
+  user User [not null]
+}
+
+Table Post {
+  id String [pk]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  title String [not null]
+  description String [not null]
+  authorId String [not null]
+  author User [not null]
+}
+
+Table Friends {
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  senderId String [not null]
+  receiverId String [not null]
+  sender User [not null]
+  receiver User [not null]
+
+  indexes {
+    (senderId, receiverId) [pk]
+  }
+}
+
+Table chats {
+  chatsId String [ref: > Conversation.id]
+  participantsId String [ref: > User.id]
+}
+
+Enum Role {
+  USER
+  ADMIN
+  ANON
+}
+
+Enum Mood {
+  EARTH
+  FIRE
+  WATER
+  SPACE
+  GRASS
+  METAL
+  VOID
+  SKY
+}
+
+Enum Taste {
+  SWEET
+  SOUR
+  ALKALINE
+  SALTY
+  BITTER
+  SAVORY
+  METALLIC
+  WATER
+  UMAMI
+}
+
+Enum Smell {
+  FRAGRANT
+  FRUITY
+  CITRUS
+  WOODY
+  CHEMICAL
+  SWEET
+  MINTY
+  NUTTY
+  PUNGENT
+  DECAYED
+}
+
+Enum Color {
+  RED
+  ORANGE
+  YELLOW
+  GREEN
+  BLUE
+  PURPLE
+  PINK
+  BROWN
+  GRAY
+  BLACK
+  WHITE
+}
+
+Ref: Message.conversationId > Conversation.id
+
+Ref: Message.authorId > User.id
+
+Ref: Conversation.authorId > User.id
+
+Ref: Presence.userId - User.id
+
+Ref: Post.authorId > User.id
+
+Ref: Friends.senderId > User.id
+
+Ref: Friends.receiverId > User.id
