@@ -73,6 +73,7 @@ Table Friends {
   receiverId String [not null]
   sender User [not null]
   receiver User [not null]
+  id String [unique, not null]
 
   indexes {
     (senderId, receiverId) [pk]

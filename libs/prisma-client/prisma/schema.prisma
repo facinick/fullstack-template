@@ -149,6 +149,8 @@ model Friends {
   receiverId String
   sender     User     @relation(name: "following", fields: [senderId], references: [id])
   receiver   User     @relation(name: "followers", fields: [receiverId], references: [id])
+  // workaround for nexus prisma to work as it doesn't recognize @@id field
+  id         String   @unique @default(uuid())
 
   @@id([senderId, receiverId])
 }

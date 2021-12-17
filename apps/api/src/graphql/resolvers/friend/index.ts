@@ -1,1 +1,1 @@
-export { FriendMutations } from './types';
+export { FriendMutations, Friend, FriendSubscriptions } from './types';

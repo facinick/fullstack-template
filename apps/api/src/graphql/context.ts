@@ -2,12 +2,15 @@ import { PrismaClient } from '@fullstack/prisma-client';
 import { DecodedTokenUserData, getAuthenticatedUser } from "../utils/auth";
 import { prisma } from './prisma';
 import * as express from "express";
+import { PubSub } from 'apollo-server-express';
 
+const pubsub = new PubSub();
 export interface Context {
   prisma: PrismaClient;
   req: express.Request;
   res: express.Response;
   user: DecodedTokenUserData | null;
+  pubsub: PubSub
 }
 
 // need prisma for accessing database, response (res) for setting https cookie on client side
@@ -34,5 +37,6 @@ export const createContext = ({
     res,
     prisma,
     user,
+    pubsub: pubsub
   };
 };

@@ -1,9 +1,14 @@
 import * as express from 'express';
 import { server as apolloServer } from './graphql/server';
+import * as http from 'http';
 
 const app = express();
 
+const httpServer = http.createServer(app);
+
 apolloServer.applyMiddleware({ app });
+
+apolloServer.installSubscriptionHandlers(httpServer);
 
 app.get('/', function (req, res) {
   const proxyHost = req.headers["x-forwarded-host"];
@@ -13,8 +18,19 @@ app.get('/', function (req, res) {
 
 const port = process.env.PORT || 3333;
 
-const server = app.listen(port, () => {
-  console.log('🔥🔥🔥 Listening at http://localhost:' + port + " 🔥🔥🔥");
+// const server = app.listen(port, () => {
+//   console.log('🔥🔥🔥 Listening at http://localhost:' + port + " 🔥🔥🔥");
+// });
+
+
+httpServer.listen(port, () => {
+  console.log(
+    `🚀 Server ready at http://localhost:${port}${apolloServer.graphqlPath}`,
+  );
+  console.log(
+    `🚀 Subscriptions ready at ws://localhost:${port}${apolloServer.subscriptionsPath}`,
+  );
 });
 
-server.on('error', console.error);
+
+httpServer.on('error', console.error);
