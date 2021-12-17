@@ -1,9 +1,20 @@
 import { UnAuthenticatedError, UnAuthorizedError } from "../../../errors/FourHundred";
-import { stringArg, nonNull, extendType, list, nullable, intArg, arg } from "nexus";
+import { stringArg, nonNull, extendType, list, nullable, intArg, arg, inputObjectType } from "nexus";
 import { objectType } from "nexus";
 import { User } from "..";
-import { LinkOrderByInput } from "../user/types";
+
+export const ConversationOrderBy = inputObjectType({
+    name: "ConversationOrderBy",
+    definition(t) {
+        t.field("id", { type: Sort });
+        t.field("createdAt", { type: Sort });
+        t.field("name", { type: Sort });
+        t.field("authorId", { type: Sort });
+    },
+});
+
 import { InternalServerError } from "../../../errors/FiveHundred";
+import { Sort } from "../user/types";
 
 export const Text = objectType({
     name: 'Message',
@@ -29,13 +40,21 @@ export const Chat = objectType({
             args: {
                 skip: nullable(intArg()),
                 take: nullable(intArg()),
+                filter: nullable(stringArg()),
+                orderBy: arg({ type: ConversationOrderBy }),
             },
             resolve: async (_root, _args, ctx) => {
                 const { prisma } = ctx;
-                const { skip, take } = _args;
+                const { skip, take, filter, orderBy } = _args;
                 const { user } = ctx;
 
-                console.log(user);
+                const where = filter
+                    ? {
+                        OR: [
+                            { text: { contains: filter } },
+                        ],
+                    }
+                    : {}
 
                 const pagination: {
                     skip?: number;
@@ -52,9 +71,12 @@ export const Chat = objectType({
 
                 const _messages = await prisma.message.findMany({
                     where: {
-                        conversationId: _root.id
+                        conversationId: _root.id,
+                        ...where
+
                     },
                     ...pagination,
+                    orderBy
                 })
 
                 return _messages;

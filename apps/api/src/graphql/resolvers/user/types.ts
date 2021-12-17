@@ -1,11 +1,10 @@
 import { UnAuthenticatedError, UnAuthorizedError } from '../../../errors/FourHundred';
 import { arg, enumType, extendType, inputObjectType, intArg, list, nonNull, nullable, objectType, stringArg } from 'nexus';
 
-export const LinkOrderByInput = inputObjectType({
-    name: "LinkOrderByInput",
+export const UserOrderBy = inputObjectType({
+    name: "UserOrderBy",
     definition(t) {
         t.field("id", { type: Sort });
-        t.field("name", { type: Sort });
         t.field("createdAt", { type: Sort });
     },
 });
@@ -46,12 +45,20 @@ export const User = objectType({
             args: {
                 skip: nullable(intArg()),
                 take: nullable(intArg()),
-                filter: nullable(stringArg()),
-                orderBy: arg({ type: LinkOrderByInput }),
+                filterById: nullable(stringArg()),
+                orderBy: arg({ type: UserOrderBy }),
             },
             resolve: async (_root, _args, ctx) => {
                 const { prisma } = ctx;
-                const { skip, take, filter, orderBy } = _args;
+                const { skip, take, filterById, orderBy } = _args;
+
+                const filter = filterById
+                    ? {
+                        OR: [
+                            { senderId: { contains: filterById } },
+                        ],
+                    }
+                    : {}
 
                 // skip and take if any from all the results
                 const pagination: {
@@ -70,11 +77,13 @@ export const User = objectType({
                 const _friends = await prisma.friends.findMany({
                     where: {
                         receiverId: _root.id,
+                        ...filter
                     },
                     ...pagination,
                     include: {
                         sender: true,
-                    }
+                    },
+                    orderBy
                 });
                 const _followers = _friends.map((queryResult) => queryResult.sender);
                 return _followers;
@@ -85,12 +94,20 @@ export const User = objectType({
             args: {
                 skip: nullable(intArg()),
                 take: nullable(intArg()),
-                filter: nullable(stringArg()),
-                orderBy: arg({ type: LinkOrderByInput }),
+                filterById: nullable(stringArg()),
+                orderBy: arg({ type: UserOrderBy }),
             },
             resolve: async (_root, _args, ctx) => {
                 const { prisma } = ctx;
-                const { skip, take, filter, orderBy } = _args;
+                const { skip, take, filterById, orderBy } = _args;
+
+                const filter = filterById
+                    ? {
+                        OR: [
+                            { receiverId: { contains: filterById } },
+                        ],
+                    }
+                    : {}
 
                 // skip and take if any from all the results
                 const pagination: {
@@ -107,11 +124,12 @@ export const User = objectType({
                 }
 
                 const _friends = await prisma.friends.findMany({
-                    where: { senderId: _root.id },
+                    where: { senderId: _root.id, ...filter },
                     ...pagination,
                     include: {
                         receiver: true,
-                    }
+                    },
+                    orderBy
                 });
 
                 const _following = _friends.map((queryResult) => queryResult.receiver);
@@ -162,30 +180,3 @@ export const userQueries = extendType({
         })
     },
 })
-
-// export const userMutations = extendType({
-//     type: "Mutation",
-//     definition(t) {
-//         t.nonNull.field("updateOneUser", {
-//             type: User,
-//             args: {
-//                 userId: nonNull(stringArg()),
-//             },
-//             resolve: async (_root, _args, ctx) => {
-//                 const { prisma } = ctx;
-//                 const { userId } = _args;
-//                 const { user } = ctx;
-
-//                 if (!user) {
-//                     throw new UnAuthenticatedError();
-//                 }
-
-//                 if (user.id !== _root.id) {
-//                     throw new UnAuthorizedError();
-//                 }
-
-//                 return user;
-//             },
-//         });
-//     },
-// });
