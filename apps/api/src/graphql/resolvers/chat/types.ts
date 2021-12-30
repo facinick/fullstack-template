@@ -1,7 +1,50 @@
 import { UnAuthenticatedError, UnAuthorizedError } from "../../../errors/FourHundred";
-import { stringArg, nonNull, extendType, list, nullable, intArg, arg, inputObjectType } from "nexus";
+import { stringArg, nonNull, extendType, list, nullable, intArg, arg, inputObjectType, enumType } from "nexus";
 import { objectType } from "nexus";
 import { User } from "..";
+import Events, { SubscriptionEventType } from "../../../constants/graphEvents";
+
+export const MutationType = enumType({
+    name: "MutationType",
+    members: ["created", "deleted", "updated"],
+});
+
+export interface SubscriptionPayload<T> {
+    event: SubscriptionEventType;
+    mutationType: 'created' | 'deleted' | 'updated';
+    payload: T;
+}
+
+export const ChatSubscriptionType = objectType({
+    name: 'ChatSubscriptionType',
+    definition(t) {
+        t.nonNull.field('mutationType', { type: MutationType });
+        t.nonNull.string('event');
+        t.nonNull.field('payload', { type: Chat });
+    },
+});
+
+export const TextSubscriptionType = objectType({
+    name: 'TextSubscriptionType',
+    definition(t) {
+        t.nonNull.field('mutationType', { type: MutationType });
+        t.nonNull.string('event');
+        t.nonNull.field('payload', { type: Text });
+    },
+});
+
+type ChatCreatePaylaod = Conversation;
+
+type ChatDeletePaylaod = Pick<Conversation, 'id'>;
+
+type ChatUpdatePaylaod = Conversation;
+
+type TextCreatePaylaod = Message;
+
+// type TextDeletePaylaod = Pick<Conversation, 'id'>;
+
+// type TextUpdatePaylaod = Conversation;
+
 
 export const ConversationOrderBy = inputObjectType({
     name: "ConversationOrderBy",
@@ -15,6 +58,8 @@ export const ConversationOrderBy = inputObjectType({
 
 import { InternalServerError } from "../../../errors/FiveHundred";
 import { Sort } from "../user/types";
+import { Conversation, Message } from "@fullstack/prisma-client";
+import { isValidConversationName } from "./validation";
 
 export const Text = objectType({
     name: 'Message',
@@ -103,7 +148,7 @@ export const ChatMutations = extendType({
             resolve: async (_root, _args, ctx) => {
                 const { prisma } = ctx;
                 const { participantIds, text } = _args;
-                const { user } = ctx;
+                const { user, pubsub } = ctx;
 
                 if (!user) {
                     throw new UnAuthenticatedError();
@@ -131,11 +176,28 @@ export const ChatMutations = extendType({
                 try {
                     const _conversation = await prisma.conversation.create({
                         data: {
-                            ...participants,
-                            ...texts,
-                            authorId: user.id
-                        }
+                            participants,
+                            author: {
+                                connect: {
+                                    id: user.id
+                                }
+                            },
+                            texts
+                        },
+                        include: {
+                            texts: true,
+                            author: true,
+                            participants: true,
+                        },
                     });
+
+                    const _chatPayload: SubscriptionPayload<ChatCreatePaylaod> = {
+                        event: Events.CHAT,
+                        mutationType: 'created',
+                        payload: _conversation
+                    }
+
+                    pubsub.publish(Events.CHAT, _chatPayload);
 
                     return _conversation;
                 }
@@ -154,7 +216,7 @@ export const ChatMutations = extendType({
             resolve: async (_root, _args, ctx) => {
                 const { prisma } = ctx;
                 const { conversationId } = _args;
-                const { user } = ctx;
+                const { user, pubsub } = ctx;
 
                 if (!user) {
                     throw new UnAuthenticatedError();
@@ -172,6 +234,16 @@ export const ChatMutations = extendType({
                         }
                     });
 
+                    const _chatPayload: SubscriptionPayload<ChatDeletePaylaod> = {
+                        event: Events.CHAT,
+                        mutationType: 'deleted',
+                        payload: {
+                            id: conversationId
+                        }
+                    }
+
+                    pubsub.publish(Events.CHAT, _chatPayload);
+
                     return _conversation;
                 }
 
@@ -180,8 +252,83 @@ export const ChatMutations = extendType({
                 }
             },
         });
+        t.nonNull.field("updateOneConversation", {
+            type: Chat,
+            args: {
+                conversationId: nonNull(stringArg()),
+                name: stringArg(),
+                participantIds: nonNull(list(stringArg())),
+            },
+            resolve: async (_root, _args, ctx) => {
+                const { prisma } = ctx;
+                const { conversationId, participantIds, name } = _args;
+                const { user, pubsub } = ctx;
+
+                if (!user) {
+                    throw new UnAuthenticatedError();
+                }
+
+                let updateName = false;
+                let updateParticipants = false;
+
+                if (isValidConversationName(name)) {
+                    updateName = true;
+                }
+
+                let newParticipants = [];
+                if (participantIds.length > 0) {
+                    console.log(`creating participnts update list`)
+                    updateParticipants = true;
+                    const _participants = (await prisma.conversation.findUnique({
+                        where: {
+                            id: conversationId,
+                        },
+                        select: {
+                            participants: true
+                        }
+                    })).participants;
+                    console.log(_participants)
+                    _participants.forEach((user) => newParticipants.push(user.id));
+                    newParticipants.push(participantIds);
+                    console.log(newParticipants)
+                }
+
+                try {
+                    const _conversation = await prisma.conversation.update({
+                        where: {
+                            id: conversationId,
+                        },
+                        data: {
+                            ...(updateName && { name }),
+                            ...(updateParticipants && {
+                                participants: {
+                                    connect: newParticipants.map(participantId => ({
+                                        id: participantId,
+                                    }))
+                                }
+                            }),
+                        }
+                    });
+
+                    const _chatPayload: SubscriptionPayload<ChatUpdatePaylaod> = {
+                        event: Events.CHAT,
+                        mutationType: 'updated',
+                        payload: _conversation
+                    }
+
+                    pubsub.publish(Events.CHAT, _chatPayload);
+
+                    return _conversation;
+                }
+
+                catch (e) {
+                    throw new InternalServerError(`Error trying to update a conversation: ${JSON.stringify(e)}`);
+                }
+            },
+        });
     },
 });
+
 
 export const TextMutations = extendType({
     type: "Mutation",
@@ -195,7 +342,7 @@ export const TextMutations = extendType({
             resolve: async function (_root, _args, _ctx) {
                 const { user } = _ctx;
                 const { text, conversationId } = _args;
-                const { prisma } = _ctx;
+                const { prisma, pubsub } = _ctx;
 
                 if (!user) {
                     throw new UnAuthenticatedError();
@@ -212,12 +359,24 @@ export const TextMutations = extendType({
                         connect: {
                             id: conversationId
                         }
-                    }
+                    },
                 };
 
-                const _text = prisma.message.create({
-                    data
-                })
+                const _text = await prisma.message.create({
+                    data,
+                    include: {
+                        conversation: true,
+                        author: true
+                    }
+                });
+
+                const _textPayload: SubscriptionPayload<TextCreatePaylaod> = {
+                    event: Events.TEXT,
+                    mutationType: 'created',
+                    payload: _text
+                }
+
+                pubsub.publish(Events.TEXT, _textPayload);
 
                 return _text;
             }
@@ -225,18 +384,38 @@ export const TextMutations = extendType({
     },
 });
 
-// export const TextSubscriptions = extendType({
-//     type: "Subscription",
-//     definition(t) {
-//         t.field('subscribeToText', {
-//             type: Text,
-//             subscribe: async (root, args, context) => {
-//                 const { prisma} = context;
-//                 return prisma.
-//             },
-//             resolve: payload => {
-//                 return payload;
-//             }
-//         })
-//     },
-// });
+export const TextSubscriptions = extendType({
+    type: "Subscription",
+    definition(t) {
+        t.nonNull.field("text", {
+            type: TextSubscriptionType,
+            subscribe: (root, args, context) => {
+                const { user } = context;
+                // if (!user) {
+                //     throw new UnAuthenticatedError();
+                // }
+                return context.pubsub.asyncIterator("TEXT")
+            },
+            //@ts-ignore
+            resolve: (payload) => payload
+        });
+    },
+});
+
+export const ConversationSubscriptions = extendType({
+    type: "Subscription",
+    definition(t) {
+        t.nonNull.field("chat", {
+            type: ChatSubscriptionType,
+            subscribe: (root, args, context) => {
+                const { user } = context;
+                // if (!user) {
+                //     throw new UnAuthenticatedError();
+                // }
+                return context.pubsub.asyncIterator("CHAT")
+            },
+            //@ts-ignore
+            resolve: (payload) => payload
+        });
+    },
+});

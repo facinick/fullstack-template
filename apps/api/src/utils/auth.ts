@@ -19,6 +19,7 @@ export function verifyAccessToken(
         decodedToken = jwt.verify(accessToken, ACCESS_TOKEN_SECRET);
         return decodedToken;
     } catch (error) {
+        console.log(error);
         throw new Error("Not authenticated: Access Token Expired or Invalid!");
     }
 }

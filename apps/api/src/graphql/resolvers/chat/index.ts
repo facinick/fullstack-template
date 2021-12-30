@@ -1,1 +1,1 @@
-export { ChatMutations, TextMutations, Text, Chat } from './types';
+export { ChatMutations, TextMutations, Text, Chat, TextSubscriptions, ConversationSubscriptions } from './types';

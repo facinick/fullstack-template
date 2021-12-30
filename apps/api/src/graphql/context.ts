@@ -29,7 +29,7 @@ export const createContext = ({
   try {
     user = req && req.headers && req.headers.authorization ? getAuthenticatedUser(req) : null;
   } catch (error) {
-
+    console.log(error);
   }
 
   return {

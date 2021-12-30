@@ -1,11 +1,10 @@
 import { ApolloError } from '@apollo/client';
-import { WaitSecureMutMutation } from '@fullstack/data-access';
 
 export interface WaitHookProps {
     wait: () => Promise<any>;
     loading: boolean;
     error: ApolloError | undefined;
-    data: WaitSecureMutMutation | null | undefined
+    data: any | null | undefined
 }
 
 export function WaitHook(props: WaitHookProps) {

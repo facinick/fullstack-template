@@ -18,11 +18,6 @@ app.get('/', function (req, res) {
 
 const port = process.env.PORT || 3333;
 
-// const server = app.listen(port, () => {
-//   console.log('🔥🔥🔥 Listening at http://localhost:' + port + " 🔥🔥🔥");
-// });
-
-
 httpServer.listen(port, () => {
   console.log(
     `🚀 Server ready at http://localhost:${port}${apolloServer.graphqlPath}`,
